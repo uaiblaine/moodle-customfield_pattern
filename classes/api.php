@@ -60,8 +60,10 @@ final class api {
      * The problems of a configuration, one message per setting
      *
      * Checks that the preset and the storage format are known, that a custom preset has a valid
-     * mask, that the regex compiles and, when `maxlength` is given, that it can hold the longest
-     * value the mask stores. Whether `maxlength` itself is in range is the caller's rule.
+     * mask, that the regex is at most {@see pattern::REGEX_MAX_LENGTH} characters, compiles and
+     * survives a probe value ({@see pattern::regex_survives_probe()}, a smoke test for
+     * catastrophic backtracking, not a proof) and, when `maxlength` is given, that it can hold the
+     * longest value the mask stores. Whether `maxlength` itself is in range is the caller's rule.
      *
      * @param array $config the configuration (see the class description)
      * @return array setting name ('preset', 'mask', 'regex', 'storeformat' or 'maxlength') =>
@@ -85,8 +87,12 @@ final class api {
         }
 
         $regex = trim(self::setting($config, 'regex'));
-        if ($regex !== '' && !pattern::regex_compiles($regex)) {
+        if (\core_text::strlen($regex) > pattern::REGEX_MAX_LENGTH) {
+            $errors['regex'] = get_string('errorconfigregexlength', 'customfield_pattern', pattern::REGEX_MAX_LENGTH);
+        } else if ($regex !== '' && !pattern::regex_compiles($regex)) {
             $errors['regex'] = get_string('errorconfigregex', 'customfield_pattern');
+        } else if ($regex !== '' && !pattern::regex_survives_probe($regex)) {
+            $errors['regex'] = get_string('errorconfigregexslow', 'customfield_pattern');
         }
 
         $storeformat = self::setting($config, 'storeformat');
@@ -121,7 +127,8 @@ final class api {
      * @param string $value the value as typed
      * @param \context|null $context context to format `regexerror` in; system when null
      * @return string|null null when valid, else the localised error message, safe to output as
-     *      HTML like the result of get_string()
+     *      HTML like the result of get_string(); a regex that cannot reach an answer within its
+     *      bounded run gives "could not be checked" (`errorregexunchecked`), never `regexerror`
      */
     public static function validate(array $config, string $value, ?\context $context = null): ?string {
         return (new pattern(self::clean($config), $context))->validate($value);

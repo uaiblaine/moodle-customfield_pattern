@@ -85,6 +85,14 @@ the mask is applied (with the literals, unless "Store as" is "Typed characters o
 expression that does not compile is refused on the settings form. When it does not match,
 the field shows the configured error message, or a generic one.
 
+The expression is set by an administrator but runs on what users type, so its run is bounded:
+it is evaluated with PCRE's match limit lowered to 100,000 and the JIT off, and a value it cannot
+answer for within that bound is refused with "The value could not be checked against the
+pattern." rather than the error message. The settings form refuses an expression longer than 512
+characters, and one that already gives up on a probe value (64 letters followed by `!`, the shape
+that makes nested repetitions such as `(a+)+` explode); that probe is a smoke test, not a proof,
+so keep expressions free of nested repetitions.
+
 ### For developers
 
 `\customfield_pattern\api` is the public API for components that keep values outside

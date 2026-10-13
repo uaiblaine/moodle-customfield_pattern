@@ -108,6 +108,10 @@ its consequences for upgrade steps and cherry-picks are in the fleet file (`~/de
 - The regex is anchored and must also match the whole value: a body such as `a)|(b` closes the
   wrapping group and would otherwise defeat `\A...\z`. The delimiter is chr(1), so `/` needs no
   escape.
+- The regex is admin-set and runs on user input: `local\pattern::regex_matches()` lowers
+  `pcre.backtrack_limit` and turns the JIT off for the one call, restoring both in `finally`; a
+  null (aborted) result is "could not be checked" (`errorregexunchecked`), never a mismatch. The
+  settings cap it at `REGEX_MAX_LENGTH` and try it on a probe value, a smoke test only.
 - Changing a field's mask or storage format does not rewrite stored values; display falls back
   to the stored string when it does not fit the current mask.
 

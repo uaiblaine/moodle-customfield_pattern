@@ -211,6 +211,7 @@ final class field_controller_test extends \advanced_testcase {
             'unknown preset' => [['preset' => 'nonsense'], 'configdata[preset]', 'errorconfigpreset'],
             'unknown storage format' => [['storeformat' => 'hashed'], 'configdata[storeformat]', 'errorconfigstoreformat'],
             'regex that does not compile' => [['regex' => '([0-9]'], 'configdata[regex]', 'errorconfigregex'],
+            'regex that backtracks catastrophically' => [['regex' => '(a+)+$'], 'configdata[regex]', 'errorconfigregexslow'],
             'regex with a slash compiles' => [['regex' => '[0-9]{3}/[A-Z]+'], null, null],
             'maximum length below the masked value' => [['maxlength' => 6], 'configdata[maxlength]', 'errorconfigmaxlenmask'],
             'maximum length fits the raw value' => [['maxlength' => 6, 'storeformat' => 'raw'], null, null],

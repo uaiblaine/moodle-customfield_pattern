@@ -16,6 +16,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   is one implementation of every rule.
 - The configuration form refuses an unknown format or storage format.
 
+### Security
+
+- **The regular expression runs bounded.** An administrator's expression runs on user input, so it
+  is evaluated with a lowered PCRE match limit (100,000) and the JIT off, both restored after the
+  call; an expression that cannot answer within that bound refuses the value with "The value could
+  not be checked against the pattern." instead of reading as a mismatch. The settings refuse an
+  expression longer than 512 characters, or one that already gives up on a probe value (a smoke
+  test for catastrophic backtracking such as `(a+)+$`).
+
 ### Fixed
 
 - **The mask now works in a modal form**, such as enrol_apply's application form. A dynamic form

@@ -236,4 +236,63 @@ final class api_test extends \advanced_testcase {
         $this->assertSame(api::format($config, '12ABC34501DE35'), $field->format_for_display('12ABC34501DE35'));
         $this->assertSame(api::masks($config), $field->get_masks());
     }
+
+    /**
+     * config_errors() caps the regex length and refuses one that cannot answer on the probe value
+     *
+     * @return void
+     */
+    public function test_config_errors_bound_the_regex(): void {
+        $this->assertSame([], api::config_errors(['regex' => str_repeat('a', 512)]));
+        $this->assertSame([], api::config_errors(['regex' => '[A-Z]{3}-[0-9]{6}|(ab|cd)+']));
+        $this->assertSame(
+            ['regex' => get_string('errorconfigregexlength', 'customfield_pattern', 512)],
+            api::config_errors(['regex' => str_repeat('a', 513)])
+        );
+        // Characters, not bytes: 512 two-byte letters fit.
+        $this->assertSame([], api::config_errors(['regex' => str_repeat('é', 512)]));
+        $this->assertSame(
+            ['regex' => get_string('errorconfigregexslow', 'customfield_pattern')],
+            api::config_errors(['regex' => '(a+)+$'])
+        );
+    }
+
+    /**
+     * A catastrophic regex stops at the lowered match limit and reports that it could not check
+     *
+     * The site's own limit is raised first, so only the limit validate() sets keeps the run short;
+     * both settings are back to the site's afterwards.
+     *
+     * @return void
+     */
+    public function test_catastrophic_regex_is_bounded(): void {
+        $sitelimit = ini_get('pcre.backtrack_limit');
+        $sitejit = ini_get('pcre.jit');
+        ini_set('pcre.backtrack_limit', '2000000000');
+        try {
+            $start = microtime(true);
+            $error = api::validate(['regex' => '(a+)+$'], str_repeat('a', 40) . '!');
+            $elapsed = microtime(true) - $start;
+
+            $this->assertSame(get_string('errorregexunchecked', 'customfield_pattern'), $error);
+            $this->assertLessThan(1.0, $elapsed, 'The run is bounded by the lowered match limit');
+            $this->assertSame('2000000000', ini_get('pcre.backtrack_limit'), 'The limit is restored');
+            $this->assertSame($sitejit, ini_get('pcre.jit'), 'The JIT setting is restored');
+        } finally {
+            ini_set('pcre.backtrack_limit', (string) $sitelimit);
+        }
+    }
+
+    /**
+     * Plain expressions on long values still answer yes or no
+     *
+     * @return void
+     */
+    public function test_plain_regex_on_a_long_value(): void {
+        $long = str_repeat('Lorem ipsum ', 110);
+
+        $this->assertNull(api::validate(['regex' => '[A-Za-z ]+'], $long));
+        $this->assertNull(api::validate(['regex' => '.*ipsum.*'], $long));
+        $this->assertSame(get_string('errorregex', 'customfield_pattern'), api::validate(['regex' => '[a-z ]+'], $long));
+    }
 }
