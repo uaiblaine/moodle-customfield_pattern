@@ -12,9 +12,9 @@ from the rule.
 Plugin context: a Moodle **custom field type** plugin ("Pattern") that adds a single-line text
 field with an input mask and validation (CPF, CNPJ numeric and alphanumeric, CEP, Brazilian
 phone, custom masks, an optional anchored regex), shaped like core's `customfield_text`. It owns
-no tables: values live in core's `customfield_data.charvalue`. Consumers: course custom fields
-and enrol_apply's application questions, which call the field controller's value API without a
-data row. Supports Moodle **5.1 through 5.3**
+no tables: values live in core's `customfield_data.charvalue`. Consumers: course custom fields,
+enrol_apply's application questions (the field controller's value API, without a data row) and
+profilefield_repeatable's pattern columns (`\customfield_pattern\api`). Supports Moodle **5.1 through 5.3**
 (`$plugin->requires = 2025100600`, `$plugin->supported = [501, 503]`).
 CI is the moodle-an-hochschulen reusable workflow, one job per supported
 branch in `.github/workflows/ci.yml` — **update those jobs when `supported`
@@ -55,6 +55,8 @@ mdl ci moodle-customfield_pattern --matrix     # every CI leg locally before any
 mdl phpunit m502 customfield_pattern           # targeted tests
 mdl grunt m502 customfield/field/pattern       # rebuild amd/build (commit with src)
 mdl purge m502                                 # after PHP changes that affect output
+# Mutation sweep: absolute spec path, and both database families.
+mdl mutate moodle-customfield_pattern /Users/uaiblaine/dev/moodle-customfield_pattern/mutations/gates.conf --fast --db pgsql
 ```
 
 In a Claude Code cloud session none of `mdl`, the stacks or `~/dev/CLAUDE.md` exist. The cloud
@@ -69,7 +71,9 @@ See `moodle-dev/cloud/README.md`.
 ## Code layout
 
 ```
-classes/field_controller.php   config form + validation; public value API (normalise/validate/format_for_display)
+classes/api.php                public API for consumers outside customfield_data: config_errors, validate,
+                               normalise, format, presets, masks, input_attributes, js_init
+classes/field_controller.php   config form + validation; value API (normalise/validate/format_for_display) over api
 classes/data_controller.php    instance form element, validation, normalised save, export
 classes/local/pattern.php      the rules of one configuration (presets, storage, regex), pure
 classes/local/mask.php         mask parsing and strict application, pure static
@@ -92,6 +96,10 @@ its consequences for upgrade steps and cherry-picks are in the fleet file (`~/de
 - The server is the authority: `local\mask::apply()` is strict (an unexpected character or a
   missing token rejects the value) while `amd/src/mask.js` drops what does not fit. Keep the
   token classes of the two in step; nothing tests the JS.
+- `api` is a published contract: its configuration keys and signatures change only with
+  `api::CONFIG_VERSION` (raised when a key changes meaning, never for a new optional key), and the
+  controllers take every rule from it (`local\pattern` only for its constants), so a rule has one
+  implementation.
 - The value API must stay a pure function of configdata and its argument: enrol_apply calls it
   on a controller with no data row, and possibly one built with `new` (no category, so
   `get_handler()` would fatal; the context falls back to system).

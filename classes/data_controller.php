@@ -17,7 +17,6 @@
 namespace customfield_pattern;
 
 use customfield_pattern\form\masked_text_element;
-use customfield_pattern\local\mask;
 
 /**
  * Data controller of the pattern custom field: instance form element, validation and storage
@@ -39,9 +38,10 @@ class data_controller extends \core_customfield\data_controller {
     /**
      * Add the text element, with the mask for the client-side formatter, to the instance form
      *
-     * With a mask the element's maxlength is the longest masked value, whatever the storage
-     * format: the user always types into the masked shape, and the configuration form already
-     * keeps the setting at or above what the mask stores.
+     * The input's attributes are {@see api::input_attributes()}: with a mask its maxlength is
+     * the longest masked value, whatever the storage format, because the user always types into
+     * the masked shape, and the configuration form already keeps the setting at or above what
+     * the mask stores.
      *
      * @param \MoodleQuickForm $mform
      * @return void
@@ -49,23 +49,13 @@ class data_controller extends \core_customfield\data_controller {
     public function instance_form_definition(\MoodleQuickForm $mform) {
         $field = $this->get_pattern_field();
         $elementname = $this->get_form_element_name();
-        $masks = $field->get_masks();
+        $config = $field->get_config();
 
-        $attributes = ['size' => (int) $field->get_configdata_property('displaysize')];
-        if ($masks) {
-            $attributes['maxlength'] = mask::max_length($masks);
-            $attributes['placeholder'] = $masks[0];
-            $attributes['data-customfield-pattern-mask'] = implode(mask::ALTERNATIVE_SEPARATOR, $masks);
-            if (mask::is_numeric($masks)) {
-                $attributes['inputmode'] = 'numeric';
-            }
-        } else if ((int) $field->get_configdata_property('maxlength') > 0) {
-            $attributes['maxlength'] = (int) $field->get_configdata_property('maxlength');
-        }
+        $attributes = ['size' => (int) $field->get_configdata_property('displaysize')] + api::input_attributes($config);
 
         // A masked input asks for its JavaScript when rendered; see masked_text_element for why.
         $type = 'text';
-        if ($masks) {
+        if (api::masks($config)) {
             masked_text_element::register();
             $type = masked_text_element::TYPE;
         }

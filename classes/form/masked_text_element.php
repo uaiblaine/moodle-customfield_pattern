@@ -65,19 +65,7 @@ class masked_text_element extends MoodleQuickForm_text {
      * @return array Template context.
      */
     public function export_for_template(renderer_base $output) {
-        self::require_mask_js();
+        \customfield_pattern\api::js_init();
         return parent::export_for_template($output);
-    }
-
-    /**
-     * Ask the current requirements manager for the mask module, once per manager.
-     *
-     * @return void
-     */
-    protected static function require_mask_js(): void {
-        global $PAGE;
-        if ($PAGE->requires->should_create_one_time_item_now('customfield_pattern_mask')) {
-            $PAGE->requires->js_call_amd('customfield_pattern/mask', 'init');
-        }
     }
 }

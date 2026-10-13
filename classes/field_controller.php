@@ -16,16 +16,16 @@
 
 namespace customfield_pattern;
 
-use customfield_pattern\local\mask;
 use customfield_pattern\local\pattern;
 
 /**
  * Field controller of the pattern custom field: configuration form and value API
  *
  * {@see self::normalise_value()}, {@see self::validate_value()} and
- * {@see self::format_for_display()} are the public API for consumers that keep values outside
- * customfield_data (enrol_apply's application questions): they read only the field's
- * configuration and their argument.
+ * {@see self::format_for_display()} serve consumers that hold a field controller and keep values
+ * outside customfield_data (enrol_apply's application questions): they read only the field's
+ * configuration and their argument, and delegate to {@see api}, the API for consumers that hold a
+ * configuration of their own. The configuration rules are {@see api::config_errors()}'s too.
  *
  * @package    customfield_pattern
  * @copyright  2026 Anderson Blaine
@@ -68,14 +68,7 @@ class field_controller extends \core_customfield\field_controller {
         }
         $mform->addRule('configdata[maxlength]', null, 'numeric', null, 'client');
 
-        $presets = [
-            pattern::PRESET_NONE => get_string('presetnone', 'customfield_pattern'),
-            pattern::PRESET_CPF => get_string('presetcpf', 'customfield_pattern'),
-            pattern::PRESET_CNPJ => get_string('presetcnpj', 'customfield_pattern'),
-            pattern::PRESET_CEP => get_string('presetcep', 'customfield_pattern'),
-            pattern::PRESET_PHONE_BR => get_string('presetphonebr', 'customfield_pattern'),
-            pattern::PRESET_CUSTOM => get_string('presetcustom', 'customfield_pattern'),
-        ];
+        $presets = api::presets();
         $mform->addElement('select', 'configdata[preset]', get_string('preset', 'customfield_pattern'), $presets);
         $mform->addHelpButton('configdata[preset]', 'preset', 'customfield_pattern');
         // Only for a new field: a default named 'configdata[preset]' outranks the nested configdata
@@ -132,37 +125,17 @@ class field_controller extends \core_customfield\field_controller {
             $errors['configdata[displaysize]'] = get_string('errorconfigdisplaysize', 'customfield_pattern');
         }
 
-        if (($config['preset'] ?? '') === pattern::PRESET_CUSTOM) {
-            $custom = trim((string) ($config['mask'] ?? ''));
-            if ($custom === '') {
-                $errors['configdata[mask]'] = get_string('errorconfigmaskrequired', 'customfield_pattern');
-            } else if (!mask::is_valid($custom)) {
-                $errors['configdata[mask]'] = get_string('errorconfigmask', 'customfield_pattern');
-            }
-        }
-
-        $regex = trim((string) ($config['regex'] ?? ''));
-        if ($regex !== '' && !pattern::regex_compiles($regex)) {
-            $errors['configdata[regex]'] = get_string('errorconfigregex', 'customfield_pattern');
-        }
-
-        $pattern = new pattern($config, $this->get_configuration_context());
-        $masks = $pattern->get_masks();
-        if ($masks && !isset($errors['configdata[maxlength]'])) {
-            if ($pattern->get_storeformat() === pattern::STORE_RAW) {
-                $needed = mask::max_token_count($masks);
-            } else {
-                $needed = mask::max_length($masks);
-            }
-            if ($maxlength < $needed) {
-                $errors['configdata[maxlength]'] = get_string('errorconfigmaxlenmask', 'customfield_pattern', $needed);
+        // The rules every consumer shares; an out-of-range maximum length keeps its own message.
+        foreach (api::config_errors($config) as $setting => $error) {
+            if (!isset($errors['configdata[' . $setting . ']'])) {
+                $errors['configdata[' . $setting . ']'] = $error;
             }
         }
 
         // The default value obeys the same rules as typed input, once the rules themselves are valid.
         $default = (string) ($config['defaultvalue'] ?? '');
         if (!$errors && $default !== '') {
-            $error = $pattern->validate($default);
+            $error = api::validate($config, $default, $this->get_configuration_context());
             if ($error !== null) {
                 $errors['configdata[defaultvalue]'] = $error;
             }
@@ -192,7 +165,7 @@ class field_controller extends \core_customfield\field_controller {
      * @return string '' for empty input
      */
     public function normalise_value(string $raw): string {
-        return $this->get_pattern()->normalise($raw);
+        return api::normalise($this->get_config(), $raw);
     }
 
     /**
@@ -206,7 +179,7 @@ class field_controller extends \core_customfield\field_controller {
      *      HTML like the result of get_string()
      */
     public function validate_value(string $raw): ?string {
-        return $this->get_pattern()->validate($raw);
+        return api::validate($this->get_config(), $raw, $this->get_configuration_context());
     }
 
     /**
@@ -216,7 +189,7 @@ class field_controller extends \core_customfield\field_controller {
      * @return string plain text, not escaped: callers escape it
      */
     public function format_for_display(string $stored): string {
-        return $this->get_pattern()->format_for_display($stored);
+        return api::format($this->get_config(), $stored);
     }
 
     /**
@@ -225,7 +198,7 @@ class field_controller extends \core_customfield\field_controller {
      * @return array list of masks; empty when the field has no mask
      */
     public function get_masks(): array {
-        return $this->get_pattern()->get_masks();
+        return api::masks($this->get_config());
     }
 
     /**
@@ -254,12 +227,12 @@ class field_controller extends \core_customfield\field_controller {
     }
 
     /**
-     * The value rules of this field's saved configuration
+     * The saved configuration, in the shape {@see api} reads
      *
-     * @return pattern
+     * @return array
      */
-    private function get_pattern(): pattern {
-        return new pattern((array) $this->get('configdata'), $this->get_configuration_context());
+    public function get_config(): array {
+        return (array) $this->get('configdata');
     }
 
     /**

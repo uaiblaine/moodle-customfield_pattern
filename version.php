@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'customfield_pattern';
-$plugin->version   = 2026101200;
+$plugin->version   = 2026101300;
 $plugin->requires  = 2025100600;
 $plugin->supported = [501, 503];
 $plugin->maturity  = MATURITY_BETA;
