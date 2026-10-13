@@ -16,6 +16,7 @@
 
 namespace customfield_pattern;
 
+use customfield_pattern\form\masked_text_element;
 use customfield_pattern\local\mask;
 
 /**
@@ -58,12 +59,17 @@ class data_controller extends \core_customfield\data_controller {
             if (mask::is_numeric($masks)) {
                 $attributes['inputmode'] = 'numeric';
             }
-            $this->require_mask_js();
         } else if ((int) $field->get_configdata_property('maxlength') > 0) {
             $attributes['maxlength'] = (int) $field->get_configdata_property('maxlength');
         }
 
-        $mform->addElement('text', $elementname, $field->get_formatted_name(), $attributes);
+        // A masked input asks for its JavaScript when rendered; see masked_text_element for why.
+        $type = 'text';
+        if ($masks) {
+            masked_text_element::register();
+            $type = masked_text_element::TYPE;
+        }
+        $mform->addElement($type, $elementname, $field->get_formatted_name(), $attributes);
         $mform->setType($elementname, PARAM_TEXT);
         $default = (string) $this->get_default_value();
         if ($default !== '') {
@@ -156,20 +162,5 @@ class data_controller extends \core_customfield\data_controller {
     private function get_pattern_field(): field_controller {
         // The return type turns a foreign controller into a TypeError instead of an undefined method.
         return $this->get_field();
-    }
-
-    /**
-     * Load the client-side formatter once per page
-     *
-     * The module binds by event delegation on the document, so one call also serves elements a
-     * modal dynamic form renders later.
-     *
-     * @return void
-     */
-    private function require_mask_js(): void {
-        global $PAGE;
-        if ($PAGE->requires->should_create_one_time_item_now('customfield_pattern_mask')) {
-            $PAGE->requires->js_call_amd('customfield_pattern/mask', 'init');
-        }
     }
 }

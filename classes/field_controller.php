@@ -78,7 +78,11 @@ class field_controller extends \core_customfield\field_controller {
         ];
         $mform->addElement('select', 'configdata[preset]', get_string('preset', 'customfield_pattern'), $presets);
         $mform->addHelpButton('configdata[preset]', 'preset', 'customfield_pattern');
-        $mform->setDefault('configdata[preset]', pattern::PRESET_NONE);
+        // Only for a new field: a default named 'configdata[preset]' outranks the nested configdata
+        // set_data() loads, so an unconditional one showed every saved field as "None".
+        if ($this->get_configdata_property('preset') === null) {
+            $mform->setDefault('configdata[preset]', pattern::PRESET_NONE);
+        }
 
         $mform->addElement('text', 'configdata[mask]', get_string('mask', 'customfield_pattern'), ['size' => 50]);
         $mform->setType('configdata[mask]', PARAM_TEXT);
@@ -101,7 +105,9 @@ class field_controller extends \core_customfield\field_controller {
         ];
         $mform->addElement('select', 'configdata[storeformat]', get_string('storeformat', 'customfield_pattern'), $storeformats);
         $mform->addHelpButton('configdata[storeformat]', 'storeformat', 'customfield_pattern');
-        $mform->setDefault('configdata[storeformat]', pattern::STORE_MASKED);
+        if ($this->get_configdata_property('storeformat') === null) {
+            $mform->setDefault('configdata[storeformat]', pattern::STORE_MASKED);
+        }
         $mform->hideIf('configdata[storeformat]', 'configdata[preset]', 'eq', pattern::PRESET_NONE);
     }
 

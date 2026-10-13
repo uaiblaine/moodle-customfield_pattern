@@ -220,6 +220,43 @@ final class field_controller_test extends \advanced_testcase {
     }
 
     /**
+     * Editing a saved field shows its saved format and storage, not the defaults.
+     *
+     * A default set under the flat name 'configdata[preset]' outranks the nested configdata that
+     * set_data() loads, so the selects of every saved field reopened as "None" and "Masked".
+     *
+     * @return void
+     */
+    public function test_the_config_form_shows_the_saved_selects(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $category = $this->get_generator()->create_category();
+        $field = $this->get_generator()->create_field([
+            'categoryid' => $category->get('id'),
+            'shortname' => 'taxid',
+            'type' => 'pattern',
+            'configdata' => ['preset' => 'cpf', 'storeformat' => 'raw', 'displaysize' => 30, 'maxlength' => 30],
+        ]);
+
+        $form = new \core_customfield\field_config_form(null, null, 'post', '', null, true, ['id' => $field->get('id')]);
+        $form->set_data_for_dynamic_submission();
+        $mform = (new \ReflectionProperty(\moodleform::class, '_form'))->getValue($form);
+
+        $this->assertSame(['cpf'], $mform->getElementValue('configdata[preset]'));
+        $this->assertSame(['raw'], $mform->getElementValue('configdata[storeformat]'));
+
+        // The control: a new field still starts from the defaults.
+        $new = new \core_customfield\field_config_form(null, null, 'post', '', null, true, [
+            'categoryid' => $category->get('id'),
+            'type' => 'pattern',
+        ]);
+        $new->set_data_for_dynamic_submission();
+        $newform = (new \ReflectionProperty(\moodleform::class, '_form'))->getValue($new);
+        $this->assertSame([pattern::PRESET_NONE], $newform->getElementValue('configdata[preset]'));
+        $this->assertSame([pattern::STORE_MASKED], $newform->getElementValue('configdata[storeformat]'));
+    }
+
+    /**
      * config_form_validation() flags each broken setting on its own element
      *
      * @param array $overrides
