@@ -31,11 +31,16 @@ $string['errorconfigmask'] = 'Cada alternativa da máscara, separada por |, deve
 $string['errorconfigmaskrequired'] = 'Uma máscara personalizada é obrigatória quando o formato é Máscara personalizada.';
 $string['errorconfigmaxlen'] = 'O número máximo de caracteres permitidos deve estar entre 1 e 1333.';
 $string['errorconfigmaxlenmask'] = 'O número máximo de caracteres deve ser pelo menos {$a}, o tamanho do maior valor que a máscara armazena.';
+$string['errorconfigpreset'] = 'Este formato não é conhecido.';
 $string['errorconfigregex'] = 'Esta expressão regular não é válida.';
+$string['errorconfigregexlength'] = 'A expressão regular pode ter no máximo {$a} caracteres.';
+$string['errorconfigregexslow'] = 'Esta expressão regular demora demais para ser verificada (faz retrocessos demais): simplifique-a, por exemplo removendo repetições aninhadas como (a+)+.';
+$string['errorconfigstoreformat'] = 'Este formato de armazenamento não é conhecido.';
 $string['errorcpf'] = 'Este não é um CPF válido.';
 $string['errormask'] = 'O valor não corresponde ao formato esperado: {$a}.';
 $string['errormaxlength'] = 'O número máximo de caracteres permitidos neste campo é {$a}.';
 $string['errorregex'] = 'O valor não está no formato esperado.';
+$string['errorregexunchecked'] = 'Não foi possível verificar o valor em relação ao padrão.';
 $string['mask'] = 'Máscara personalizada';
 $string['mask_help'] = 'O formato do valor. Na máscara:
 

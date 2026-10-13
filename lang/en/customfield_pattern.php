@@ -31,11 +31,16 @@ $string['errorconfigmask'] = 'Every alternative of the mask, separated by |, mus
 $string['errorconfigmaskrequired'] = 'A custom mask is required when the format is Custom mask.';
 $string['errorconfigmaxlen'] = 'The maximum number of characters allowed must be between 1 and 1333.';
 $string['errorconfigmaxlenmask'] = 'The maximum number of characters must be at least {$a}, the length of the longest value the mask stores.';
+$string['errorconfigpreset'] = 'This format is not known.';
 $string['errorconfigregex'] = 'This regular expression is not valid.';
+$string['errorconfigregexlength'] = 'The regular expression may have at most {$a} characters.';
+$string['errorconfigregexslow'] = 'This regular expression takes too long to check (it backtracks too much): simplify it, for example by removing nested repetitions such as (a+)+.';
+$string['errorconfigstoreformat'] = 'This storage format is not known.';
 $string['errorcpf'] = 'This is not a valid CPF.';
 $string['errormask'] = 'The value does not match the expected format: {$a}.';
 $string['errormaxlength'] = 'The maximum number of characters allowed in this field is {$a}.';
 $string['errorregex'] = 'The value is not in the expected format.';
+$string['errorregexunchecked'] = 'The value could not be checked against the pattern.';
 $string['mask'] = 'Custom mask';
 $string['mask_help'] = 'The shape of the value. In the mask:
 

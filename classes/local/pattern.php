@@ -46,6 +46,22 @@ final class pattern {
     /** @var string Store only the characters typed into the mask's tokens. */
     public const STORE_RAW = 'raw';
 
+    /** @var int Longest regular expression body a configuration may hold. */
+    public const REGEX_MAX_LENGTH = 512;
+
+    /**
+     * @var int pcre.backtrack_limit (PCRE2's match limit) while a regex runs, a tenth of PHP's default: a
+     *          plain expression on a value of a few hundred characters stays far below it, a
+     *          catastrophic one stops within milliseconds.
+     */
+    public const REGEX_BACKTRACK_LIMIT = 100000;
+
+    /**
+     * @var string Value a regex is tried on when it is configured ({@see self::regex_survives_probe()}):
+     *             the shape that makes nested quantifiers such as (a+)+$ backtrack exponentially.
+     */
+    private const REGEX_PROBE = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!';
+
     /** @var array Mask of every preset that has a fixed one. */
     private const PRESET_MASKS = [
         self::PRESET_CPF => '999.999.999-99',
@@ -196,7 +212,12 @@ final class pattern {
             return get_string('errormaxlength', 'customfield_pattern', $this->maxlength);
         }
 
-        if ($this->regex !== '' && self::regex_matches($this->regex, $normalised) !== true) {
+        $matches = $this->regex === '' ? true : self::regex_matches($this->regex, $normalised);
+        if ($matches === null) {
+            // Not a "no": the expression aborted (match limit, invalid UTF-8) or no longer compiles.
+            return get_string('errorregexunchecked', 'customfield_pattern');
+        }
+        if ($matches === false) {
             if ($this->regexerror === '') {
                 return get_string('errorregex', 'customfield_pattern');
             }
@@ -232,14 +253,33 @@ final class pattern {
     }
 
     /**
+     * Whether a regular expression body runs to an answer on a probe value within the match limit
+     *
+     * Only a smoke test: it catches the classic catastrophic shapes (nested quantifiers such as
+     * `(a+)+$`) on a string of letters followed by a symbol, not every expression that can blow up
+     * on some other input. Whatever it misses is still bounded when a value is validated
+     * ({@see self::regex_matches()}), where it ends as "could not be checked".
+     *
+     * @param string $body the expression without delimiters or anchors, already known to compile
+     * @return bool
+     */
+    public static function regex_survives_probe(string $body): bool {
+        return self::regex_matches($body, self::REGEX_PROBE) !== null;
+    }
+
+    /**
      * Match a whole value against a regular expression body
      *
      * The body is anchored as `\A(?:body)\z` with the `u` flag, and the match must also cover
      * the whole value: a body such as `a)|(b` closes the group early and would otherwise
      * match any value that starts with `a`. The delimiter is chr(1), a character a text
      * setting cannot carry, so a `/` or `#` in the body needs no escaping. The compile warning
-     * of a bad body is swallowed and reported as null; so is a runtime failure (backtrack
-     * limit, invalid UTF-8), which callers therefore treat as no match.
+     * of a bad body is swallowed and reported as null; so is a runtime failure (match limit,
+     * invalid UTF-8), which callers report as "could not be checked", never as no match.
+     *
+     * The expression is admin-set and runs on user input, so the run is bounded: the match limit
+     * is lowered to {@see self::REGEX_BACKTRACK_LIMIT} and the JIT is off for this one call (the
+     * JIT has its own stack limit and makes the bound depend on the build), both restored after.
      *
      * @param string $body the expression without delimiters or anchors
      * @param string $value the whole value to match
@@ -249,12 +289,18 @@ final class pattern {
         $delimiter = chr(1);
         $expression = $delimiter . '\\A(?:' . $body . ')\\z' . $delimiter . 'u';
         $matches = [];
+        $backtracklimit = ini_get('pcre.backtrack_limit');
+        $jit = ini_get('pcre.jit');
         set_error_handler(static function (): bool {
             return true;
         });
         try {
+            ini_set('pcre.backtrack_limit', (string) self::REGEX_BACKTRACK_LIMIT);
+            ini_set('pcre.jit', '0');
             $result = preg_match($expression, $value, $matches);
         } finally {
+            ini_set('pcre.backtrack_limit', (string) $backtracklimit);
+            ini_set('pcre.jit', (string) $jit);
             restore_error_handler();
         }
         if ($result === false) {

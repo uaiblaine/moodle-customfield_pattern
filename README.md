@@ -85,20 +85,58 @@ the mask is applied (with the literals, unless "Store as" is "Typed characters o
 expression that does not compile is refused on the settings form. When it does not match,
 the field shows the configured error message, or a generic one.
 
+The expression is set by an administrator but runs on what users type, so its run is bounded:
+it is evaluated with PCRE's match limit lowered to 100,000 and the JIT off, and a value it cannot
+answer for within that bound is refused with "The value could not be checked against the
+pattern." rather than the error message. The settings form refuses an expression longer than 512
+characters, and one that already gives up on a probe value (64 letters followed by `!`, the shape
+that makes nested repetitions such as `(a+)+` explode); that probe is a smoke test, not a proof,
+so keep expressions free of nested repetitions.
+
 ### For developers
 
-`\customfield_pattern\field_controller` exposes the field's rules as functions of its
-configuration and their argument, for components that keep values outside
-`customfield_data`:
+`\customfield_pattern\api` is the public API for components that keep values outside
+`customfield_data`, such as a profile field with several columns or an application form. Every
+function is a pure function of a configuration array and its argument; the field type itself goes
+through the same functions, so the same configuration accepts, stores and shows the same values
+everywhere.
+
+The configuration is an array of strings, every key optional; unknown keys are ignored, so it can
+sit beside the consumer's own settings:
+
+| Key | Values |
+|---|---|
+| `preset` | `none` (default), `cpf`, `cnpj`, `cep`, `phone_br`, `custom` |
+| `mask` | the mask when `preset` is `custom` (see "Mask syntax"); ignored otherwise |
+| `regex` | optional expression body, anchored, matched against the stored value |
+| `regexerror` | optional message for a value the regex rejects |
+| `storeformat` | `masked` (default) or `raw` |
+| `maxlength` | optional, the longest stored value |
 
 ```php
-$field->normalise_value(string $raw): string;     // The value as it would be stored.
-$field->validate_value(string $raw): ?string;     // Null when valid, else the error message.
-$field->format_for_display(string $stored): string; // Plain text, mask restored; escape it.
+use customfield_pattern\api;
+
+api::CONFIG_VERSION;                                // 1; raised only when a key changes meaning.
+api::config_errors(array $config): array;           // ['mask' => 'message', ...]; empty when valid.
+api::validate(array $config, string $value): ?string;   // Null when valid, else the message (HTML-safe).
+api::normalise(array $config, string $raw): string;     // The value as it would be stored.
+api::format(array $config, string $stored): string;     // Plain text, mask restored; escape it.
+api::presets(): array;                              // Preset => localised name.
+api::masks(array $config): array;                   // The alternative masks in force.
+api::input_attributes(array $config): array;        // Attributes of the text input (mask, placeholder, ...).
+api::js_init(): void;                               // Load the typing formatter, once per page.
 ```
 
-The client-side formatter is the AMD module `customfield_pattern/mask`; it binds by event
-delegation to inputs with a `data-customfield-pattern-mask` attribute.
+A consumer validates typed input with `validate()`, stores `normalise()`'s result, shows
+`format()`'s result escaped, renders its text inputs with `input_attributes()` and calls
+`js_init()` while rendering the page or the modal form: the formatter listens on the document, so
+inputs the consumer's JavaScript adds later are formatted too. Check whether a stored value is
+unique on the normalised value. Install-time checks such as
+`class_exists('\customfield_pattern\api')` let a consumer treat this plugin as optional.
+
+The field controller keeps a value API of its own for consumers that hold one
+(`normalise_value()`, `validate_value()`, `format_for_display()`, `get_masks()`); it delegates
+to `api` with the field's saved configuration.
 
 
 Privacy
