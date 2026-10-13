@@ -69,6 +69,46 @@ final class data_controller_test extends \advanced_testcase {
     }
 
     /**
+     * The mask module is required when the input is rendered, also after a fresh requirements manager.
+     *
+     * A dynamic form in a modal is defined first and rendered inside
+     * start_collecting_javascript_requirements(), which swaps the requirements manager: a call made
+     * during definition was lost and the mask never started in enrol_apply's application modal.
+     *
+     * @return void
+     */
+    public function test_the_mask_module_is_required_when_the_form_is_rendered(): void {
+        global $CFG, $PAGE;
+        require_once($CFG->libdir . '/formslib.php');
+
+        $data = \core_customfield\data_controller::create(0, null, $this->fields['cpf']);
+        $free = \core_customfield\data_controller::create(0, null, $this->fields['free']);
+        $form = new class (null, ['data' => [$data, $free]]) extends \moodleform {
+            /**
+             * Add the two questions.
+             *
+             * @return void
+             */
+            protected function definition() {
+                foreach ($this->_customdata['data'] as $data) {
+                    $data->instance_form_definition($this->_form);
+                }
+            }
+        };
+
+        // What core_form\external\dynamic_form::execute() does after building the form.
+        $PAGE->set_url('/');
+        $PAGE->start_collecting_javascript_requirements();
+        $html = $form->render();
+        $js = $PAGE->requires->get_end_code();
+
+        $this->assertStringContainsString('customfield_pattern/mask', $js);
+        $this->assertStringContainsString('data-customfield-pattern-mask="999.999.999-99"', $html);
+        // The control: an unmasked question carries no mask attribute.
+        $this->assertSame(1, substr_count($html, 'data-customfield-pattern-mask'));
+    }
+
+    /**
      * Get the custom field generator
      *
      * @return core_customfield_generator
@@ -218,7 +258,9 @@ final class data_controller_test extends \advanced_testcase {
         foreach ($amdjscode as $code) {
             $calls += substr_count($code, "require(['customfield_pattern/mask']");
         }
-        $this->assertSame(1, $calls);
+        // Defining asks for nothing: the module is required when the input is rendered, see
+        // test_the_mask_module_is_required_when_the_form_is_rendered().
+        $this->assertSame(0, $calls);
     }
 
     /**

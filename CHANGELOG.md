@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Fixed
+
+- **The mask now works in a modal form**, such as enrol_apply's application form. A dynamic form
+  is defined first and rendered inside a fresh JavaScript requirements manager, so the mask
+  module, required while the form was being defined, was lost and the field accepted any text.
+  A masked input is now its own form element and asks for the module when it is rendered.
+- **Editing a saved field shows its saved Format and Store as.** Both selects had an
+  unconditional default that outranked the saved configuration, so every saved field reopened as
+  "None" / "Masked" (and saving it again would have overwritten the real setting).
+
 ### Added
 
 - Pattern custom field type: a single-line text field with presets for CPF, CNPJ (numeric and
