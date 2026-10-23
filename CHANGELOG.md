@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Plugins directory readiness.** The package carries a `LICENSE` file (the GPL v3 text, a copy
+  of `COPYING.txt`), and `tests/marketplace_readiness_test.php` pins the directory's submission
+  guidelines that no other gate reads: licence files shipped, English-only package, data-only
+  lang files, a README naming every table, capability and dependency, plugin-scoped settings and
+  CSS, boilerplate and copyright, and privacy cover of core rows stamped with the component.
+- README sections "Settings and capabilities", "Data stored" (the two core tables the field uses,
+  and what a data request exports) and "Translations".
 - **A public API, `\customfield_pattern\api`, for consumers that keep values outside
   `customfield_data`**: configuration checks (`config_errors()`), `validate()`, `normalise()`,
   `format()`, `presets()`, `masks()`, `input_attributes()` and `js_init()`, each a function of a
@@ -15,6 +22,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   configuration validation, its value API and the data controller's input go through it, so there
   is one implementation of every rule.
 - The configuration form refuses an unknown format or storage format.
+
+### Changed
+
+- **`lang/pt_br` leaves the release package**: the plugins directory accepts only English strings,
+  so the Brazilian Portuguese translation stays in the repository and reaches sites through AMOS.
 
 ### Security
 
