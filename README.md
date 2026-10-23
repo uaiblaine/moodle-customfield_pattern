@@ -139,11 +139,40 @@ The field controller keeps a value API of its own for consumers that hold one
 to `api` with the field's saved configuration.
 
 
-Privacy
--------
+Settings and capabilities
+-------------------------
 
-The plugin stores no personal data of its own; values live in core's `customfield_data` and are
-exported by the core custom field privacy provider, formatted as they are shown.
+The plugin has no site settings and defines no capabilities. Each field is configured on its own
+settings form (see "Settings of a field"), and who may create, edit or fill a field is decided by
+the custom field area that uses it (for course custom fields, core's
+`moodle/course:configurecustomfields` and `moodle/course:changelockedcustomfields`).
+
+
+Data stored
+-----------
+
+The plugin owns no database tables and stores no personal data of its own. It uses two core
+tables, through core's custom field API:
+
+- `customfield_field`: the field's settings (`configdata`: format, mask, regular expression,
+  storage format and lengths), kept until an administrator deletes the field.
+- `customfield_data`: one value per field and instance (for course custom fields, per course), in
+  `charvalue`, as stored by "Store as". Core removes the values with the field or with the
+  instance they belong to (a course, for example).
+
+Like core's "Short text" field, its privacy provider is a `null_provider` that also implements
+core's `customfield_provider`: when the component that owns a custom field area exports a user's
+data through `core_customfield\privacy\provider`, each value of this type is exported as it is
+shown, with its mask restored; deletion is done by core, and the plugin keeps no files or other
+rows that would need deleting with it.
+
+
+Translations
+------------
+
+The English strings ship in the package. The Brazilian Portuguese translation is maintained in
+this repository (`lang/pt_br`) and reaches sites through [AMOS](https://lang.moodle.org/), as the
+plugins directory requires; it is left out of the release package.
 
 
 Troubleshooting
@@ -160,5 +189,6 @@ License
 -------
 
 This plugin is licensed under the [GNU GPL v3 or later](http://www.gnu.org/copyleft/gpl.html).
+The full text ships in `LICENSE` and `COPYING.txt`.
 
 Copyright: 2026 Anderson Blaine
