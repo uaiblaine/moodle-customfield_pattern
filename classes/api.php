@@ -225,6 +225,24 @@ final class api {
     }
 
     /**
+     * The formslib element type a value is typed into
+     *
+     * With a mask, {@see form\masked_text_element}, registered by this call, which asks for the
+     * formatter of {@see self::js_init()} when the form is rendered; without one, `text`. Add the
+     * element with the attributes of {@see self::input_attributes()} and PARAM_TEXT.
+     *
+     * @param array $config the configuration (see the class description)
+     * @return string the type to pass to MoodleQuickForm::addElement()
+     */
+    public static function element_type(array $config): string {
+        if (!self::masks($config)) {
+            return 'text';
+        }
+        form\masked_text_element::register();
+        return form\masked_text_element::TYPE;
+    }
+
+    /**
      * Load the typing formatter on the current page, once per JavaScript requirements manager
      *
      * The module listens on the document, so inputs added to the page afterwards, by a modal

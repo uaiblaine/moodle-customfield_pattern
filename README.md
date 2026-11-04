@@ -124,11 +124,12 @@ api::format(array $config, string $stored): string;     // Plain text, mask rest
 api::presets(): array;                              // Preset => localised name.
 api::masks(array $config): array;                   // The alternative masks in force.
 api::input_attributes(array $config): array;        // Attributes of the text input (mask, placeholder, ...).
+api::element_type(array $config): string;           // The formslib element type to add the input as.
 api::js_init(): void;                               // Load the typing formatter, once per page.
 ```
 
 A consumer validates typed input with `validate()`, stores `normalise()`'s result, shows
-`format()`'s result escaped, renders its text inputs with `input_attributes()` and calls
+`format()`'s result escaped, adds its text inputs as `element_type()` with `input_attributes()` and calls
 `js_init()` while rendering the page or the modal form: the formatter listens on the document, so
 inputs the consumer's JavaScript adds later are formatted too. Check whether a stored value is
 unique on the normalised value. Install-time checks such as

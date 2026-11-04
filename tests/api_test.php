@@ -194,6 +194,25 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * A masked configuration gets the registered masked element, any other the plain text one
+     *
+     * @return void
+     */
+    public function test_element_type(): void {
+        global $CFG;
+        require_once($CFG->libdir . '/formslib.php');
+
+        $type = api::element_type(['preset' => 'cep']);
+        $this->assertSame(form\masked_text_element::TYPE, $type);
+        $mform = new \MoodleQuickForm('test', 'post', '');
+        $this->assertInstanceOf(form\masked_text_element::class, $mform->addElement($type, 'cep', 'CEP'));
+
+        // Control: a regex alone sets no mask, so the input needs no formatter.
+        $this->assertSame('text', api::element_type(['regex' => '[0-9]+']));
+        $this->assertSame('text', api::element_type([]));
+    }
+
+    /**
      * js_init() asks for the formatter once per requirements manager
      *
      * @return void
