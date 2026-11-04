@@ -16,8 +16,6 @@
 
 namespace customfield_pattern;
 
-use customfield_pattern\form\masked_text_element;
-
 /**
  * Data controller of the pattern custom field: instance form element, validation and storage
  *
@@ -53,13 +51,7 @@ class data_controller extends \core_customfield\data_controller {
 
         $attributes = ['size' => (int) $field->get_configdata_property('displaysize')] + api::input_attributes($config);
 
-        // A masked input asks for its JavaScript when rendered; see masked_text_element for why.
-        $type = 'text';
-        if (api::masks($config)) {
-            masked_text_element::register();
-            $type = masked_text_element::TYPE;
-        }
-        $mform->addElement($type, $elementname, $field->get_formatted_name(), $attributes);
+        $mform->addElement(api::element_type($config), $elementname, $field->get_formatted_name(), $attributes);
         $mform->setType($elementname, PARAM_TEXT);
         $default = (string) $this->get_default_value();
         if ($default !== '') {

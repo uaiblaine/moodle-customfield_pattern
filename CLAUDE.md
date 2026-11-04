@@ -72,7 +72,7 @@ See `moodle-dev/cloud/README.md`.
 
 ```
 classes/api.php                public API for consumers outside customfield_data: config_errors, validate,
-                               normalise, format, presets, masks, input_attributes, js_init
+                               normalise, format, presets, masks, input_attributes, element_type, js_init
 classes/field_controller.php   config form + validation; value API (normalise/validate/format_for_display) over api
 classes/data_controller.php    instance form element, validation, normalised save, export
 classes/local/pattern.php      the rules of one configuration (presets, storage, regex), pure

@@ -17,10 +17,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   and what a data request exports) and "Translations".
 - **A public API, `\customfield_pattern\api`, for consumers that keep values outside
   `customfield_data`**: configuration checks (`config_errors()`), `validate()`, `normalise()`,
-  `format()`, `presets()`, `masks()`, `input_attributes()` and `js_init()`, each a function of a
-  documented configuration array, versioned by `api::CONFIG_VERSION`. The field controller's
-  configuration validation, its value API and the data controller's input go through it, so there
-  is one implementation of every rule.
+  `format()`, `presets()`, `masks()`, `input_attributes()`, `element_type()` (the formslib
+  element a value is typed into, the masked one registered when a mask applies) and `js_init()`,
+  each a function of a documented configuration array, versioned by `api::CONFIG_VERSION`. The
+  field controller's configuration validation, its value API and the data controller's input go
+  through it, so there is one implementation of every rule.
 - The configuration form refuses an unknown format or storage format.
 
 ### Changed
