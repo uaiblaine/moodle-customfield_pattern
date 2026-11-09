@@ -157,6 +157,11 @@ final class mask {
      * consumed only where the mask has it. Every other character must fill a token of the
      * right class, all tokens must be filled and nothing may be left over.
      *
+     * The value is user input of any length, so it is checked with expressions over the whole
+     * string and never split into one array element per character (48 bytes each): only its
+     * letters and digits are collected, and only once there are no more of them than the
+     * longest alternative has characters, the most any alternative can consume.
+     *
      * @param string $value the typed value
      * @param array $alternatives list of alternative masks
      * @return array|null null when no alternative fits, else ['masked' => the value with the
@@ -172,14 +177,18 @@ final class mask {
             }
         }
 
-        $chars = [];
-        foreach (self::chars($value) as $char) {
-            if (self::is_alphanumeric($char)) {
-                $chars[] = $char;
-            } else if (!isset($droppable[$char]) && !preg_match('/^\s$/u', $char)) {
-                return null;
-            }
+        // A character that is no letter, digit, whitespace or droppable literal rejects the value;
+        // so does invalid UTF-8, for which preg_match() returns false.
+        $others = '/[^0-9A-Za-z\s' . preg_quote(implode('', array_keys($droppable)), '/') . ']/u';
+        if (preg_match($others, $value) !== 0) {
+            return null;
         }
+        if (preg_match_all('/[0-9A-Za-z]/', $value) > self::max_length($alternatives)) {
+            return null;
+        }
+        $matches = [];
+        preg_match_all('/[0-9A-Za-z]/', $value, $matches);
+        $chars = $matches[0];
 
         foreach ($alternatives as $alternative) {
             $result = self::apply_one($chars, $alternative);

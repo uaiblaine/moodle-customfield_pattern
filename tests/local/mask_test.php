@@ -44,6 +44,10 @@ final class mask_test extends \basic_testcase {
             'CPF with a character the mask does not have' => ['529982247/25', $cpf, null, null],
             'CPF one digit short' => ['5299822472', $cpf, null, null],
             'CPF one digit long' => ['529982247255', $cpf, null, null],
+            'CPF padded past the mask length with whitespace and literals' =>
+                [str_repeat(' ', 40) . '529..982..247--25' . str_repeat("\t", 40), $cpf, '529.982.247-25', '52998224725'],
+            'CPF with a character outside ASCII' => ['529982247²25', $cpf, null, null],
+            'invalid UTF-8' => ["529982247\xff25", $cpf, null, null],
             'CPF with a letter' => ['5299822472A', $cpf, null, null],
             'CNPJ letters are uppercased' => ['12abc34501de35', $cnpj, '12.ABC.345/01DE-35', '12ABC34501DE35'],
             'CNPJ typed with the literals' => ['12.ABC.345/01DE-35', $cnpj, '12.ABC.345/01DE-35', '12ABC34501DE35'],
@@ -73,6 +77,26 @@ final class mask_test extends \basic_testcase {
     public function test_apply(string $value, array $masks, ?string $masked, ?string $raw): void {
         $expected = $masked === null ? null : ['masked' => $masked, 'raw' => $raw];
         $this->assertSame($expected, mask::apply($value, $masks));
+    }
+
+    /**
+     * A long value is refused without one array element per character
+     *
+     * Splitting the value costs about 48 bytes a character, so 2 MB of digits would take some
+     * 96 MB; the check stays within the size of the value itself.
+     *
+     * @return void
+     */
+    public function test_apply_long_value_costs_no_per_character_array(): void {
+        $value = str_repeat('1', 2 * 1024 * 1024);
+        memory_reset_peak_usage();
+        $before = memory_get_peak_usage();
+
+        $this->assertNull(mask::apply($value, ['999.999.999-99']));
+        $this->assertLessThan(strlen($value), memory_get_peak_usage() - $before);
+
+        // Control: the same digits, as many as the mask takes, still fit.
+        $this->assertNotNull(mask::apply(substr($value, 0, 11), ['999.999.999-99']));
     }
 
     /**

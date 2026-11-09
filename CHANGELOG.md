@@ -37,6 +37,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   not be checked against the pattern." instead of reading as a mismatch. The settings refuse an
   expression longer than 512 characters, or one that already gives up on a probe value (a smoke
   test for catastrophic backtracking such as `(a+)+$`).
+- **A long value costs no memory per character.** Fitting a value into the mask split the whole
+  input into one array element per character (about 48 bytes each) before any length check, so a
+  POST of a few megabytes, on the signup form among others, could exhaust the PHP memory limit. The
+  value is now checked with expressions over the string, and its letters and digits are collected
+  only when there are no more of them than the longest mask has characters.
 
 ### Fixed
 
