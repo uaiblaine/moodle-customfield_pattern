@@ -83,6 +83,9 @@ class data_controller extends \core_customfield\data_controller {
         $elementname = $this->get_form_element_name();
         $value = (string) ($data[$elementname] ?? '');
         if (trim($value) === '') {
+            // Blank input is stored as '', and core compares it as typed: on MySQL and MariaDB
+            // (PAD SPACE collations) '   ' equals every other instance's empty value.
+            $data[$elementname] = '';
             return parent::instance_form_validation($data, $files);
         }
 

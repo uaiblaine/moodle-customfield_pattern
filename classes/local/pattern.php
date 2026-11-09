@@ -49,6 +49,9 @@ final class pattern {
     /** @var int Longest regular expression body a configuration may hold. */
     public const REGEX_MAX_LENGTH = 512;
 
+    /** @var int Longest custom mask setting, every alternative and separator counted. */
+    public const MASK_MAX_LENGTH = 512;
+
     /**
      * @var int pcre.backtrack_limit (PCRE2's match limit) while a regex runs, a tenth of PHP's default: a
      *          plain expression on a value of a few hundred characters stays far below it, a
@@ -272,8 +275,10 @@ final class pattern {
      *
      * The body is anchored as `\A(?:body)\z` with the `u` flag, and the match must also cover
      * the whole value: a body such as `a)|(b` closes the group early and would otherwise
-     * match any value that starts with `a`. The delimiter is chr(1), a character a text
-     * setting cannot carry, so a `/` or `#` in the body needs no escaping. The compile warning
+     * match any value that starts with `a`. The delimiter is chr(1), so a `/` or `#` in the body
+     * needs no escaping. A text setting can carry chr(1) (PARAM_RAW_TRIMMED keeps control
+     * characters), but a body holding it ends the pattern early and leaves at least the closing
+     * `)` as a modifier, so such a body never compiles and is refused. The compile warning
      * of a bad body is swallowed and reported as null; so is a runtime failure (match limit,
      * invalid UTF-8), which callers report as "could not be checked", never as no match.
      *

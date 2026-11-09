@@ -277,6 +277,50 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * config_errors() caps a custom mask at MASK_MAX_LENGTH characters, every alternative counted
+     *
+     * @return void
+     */
+    public function test_config_errors_bound_the_mask(): void {
+        $this->assertSame([], api::config_errors(['preset' => 'custom', 'mask' => str_repeat('9', 512)]));
+        $this->assertSame([], api::config_errors(['preset' => 'custom', 'mask' => str_repeat('é9', 256)]));
+        $this->assertSame(
+            ['mask' => get_string('errorconfigmasklength', 'customfield_pattern', 512)],
+            api::config_errors(['preset' => 'custom', 'mask' => str_repeat('99|', 170) . '999'])
+        );
+    }
+
+    /**
+     * A regex body carrying the chr(1) delimiter never compiles, so it is refused and never runs
+     *
+     * @return void
+     */
+    public function test_regex_with_the_delimiter_is_refused(): void {
+        foreach (["a\x01", "a\x01i", "[a-z]+\x01u"] as $body) {
+            $this->assertSame(
+                ['regex' => get_string('errorconfigregex', 'customfield_pattern')],
+                api::config_errors(['regex' => $body])
+            );
+            $this->assertSame(get_string('errorregexunchecked', 'customfield_pattern'), api::validate(['regex' => $body], 'a'));
+        }
+    }
+
+    /**
+     * A valid value padded past the input bound is refused, and normalise() stays total on it
+     *
+     * @return void
+     */
+    public function test_padded_value_is_refused(): void {
+        $padded = '529' . str_repeat('.', 100) . '98224725';
+        $this->assertNull(api::validate(['preset' => 'cpf'], '529.982.247-25'));
+        $this->assertSame(
+            get_string('errormask', 'customfield_pattern', '999.999.999-99'),
+            api::validate(['preset' => 'cpf'], $padded)
+        );
+        $this->assertSame($padded, api::normalise(['preset' => 'cpf'], $padded));
+    }
+
+    /**
      * A catastrophic regex stops at the lowered match limit and reports that it could not check
      *
      * The site's own limit is raised first, so only the limit validate() sets keeps the run short;

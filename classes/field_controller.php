@@ -219,8 +219,11 @@ class field_controller extends \core_customfield\field_controller {
      */
     public function course_grouping_format_values($values): array {
         $ret = [];
+        // The values span many courses, so they are formatted in the field's configuration context,
+        // as its other admin-facing text is, not in whatever $PAGE->context the caller has.
+        $options = ['context' => $this->get_configuration_context()];
         foreach ($values as $value) {
-            $ret[$value] = format_string($this->format_for_display((string) $value));
+            $ret[$value] = format_string($this->format_for_display((string) $value), true, $options);
         }
         $ret[BLOCK_MYOVERVIEW_CUSTOMFIELD_EMPTY] = get_string('nocustomvalue', 'block_myoverview', $this->get_formatted_name());
         return $ret;

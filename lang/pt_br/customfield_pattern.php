@@ -28,6 +28,7 @@ $string['displaysize'] = 'Tamanho do campo no formulário';
 $string['errorcnpj'] = 'Este não é um CNPJ válido.';
 $string['errorconfigdisplaysize'] = 'O tamanho do campo no formulário deve estar entre 1 e 200 caracteres.';
 $string['errorconfigmask'] = 'Cada alternativa da máscara, separada por |, deve conter pelo menos um dos símbolos 9, A ou *.';
+$string['errorconfigmasklength'] = 'A máscara pode ter no máximo {$a} caracteres.';
 $string['errorconfigmaskrequired'] = 'Uma máscara personalizada é obrigatória quando o formato é Máscara personalizada.';
 $string['errorconfigmaxlen'] = 'O número máximo de caracteres permitidos deve estar entre 1 e 1333.';
 $string['errorconfigmaxlenmask'] = 'O número máximo de caracteres deve ser pelo menos {$a}, o tamanho do maior valor que a máscara armazena.';

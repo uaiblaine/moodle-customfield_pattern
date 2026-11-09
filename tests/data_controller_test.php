@@ -220,6 +220,37 @@ final class data_controller_test extends \advanced_testcase {
     }
 
     /**
+     * Blank input is validated as the empty value it is stored as, so uniqueness is not checked
+     *
+     * On MySQL and MariaDB a uniqueness check of '   ' matches every empty value (PAD SPACE
+     * collations), which this test sees on those databases; on every database it sees the check's
+     * query, which a typed value does make (the control).
+     *
+     * @return void
+     */
+    public function test_blank_input_is_validated_as_empty(): void {
+        global $DB;
+        $course1 = $this->getDataGenerator()->create_course();
+        $course2 = $this->getDataGenerator()->create_course();
+        $handler = $this->category->get_handler();
+        $handler->instance_form_save((object) ['id' => $course1->id, 'customfield_phone' => '']);
+        $field = $this->fields['phone'];
+        $data = \core_customfield\api::get_instance_fields_data([$field->get('id') => $field], $course2->id);
+        $controller = $data[$field->get('id')];
+
+        $reads = $DB->perf_get_reads();
+        $errors = $controller->instance_form_validation(['id' => $course2->id, 'customfield_phone' => '   '], []);
+        $this->assertSame([], $errors);
+        $this->assertSame(0, $DB->perf_get_reads() - $reads, 'Blank input is not looked up');
+
+        // Control: a typed value is looked up.
+        $reads = $DB->perf_get_reads();
+        $errors = $controller->instance_form_validation(['id' => $course2->id, 'customfield_phone' => '31987654321'], []);
+        $this->assertSame([], $errors);
+        $this->assertGreaterThan(0, $DB->perf_get_reads() - $reads);
+    }
+
+    /**
      * The form element carries the mask for the formatter, which is loaded once per page
      *
      * @return void

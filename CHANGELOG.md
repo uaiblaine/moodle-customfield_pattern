@@ -37,9 +37,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   not be checked against the pattern." instead of reading as a mismatch. The settings refuse an
   expression longer than 512 characters, or one that already gives up on a probe value (a smoke
   test for catastrophic backtracking such as `(a+)+$`).
+- **Typed input is bounded before it is fitted into a mask.** Whitespace and the mask's literals
+  are dropped in any number, so a request of megabytes was split into one string per character
+  (about 50 bytes of memory each) only to be reduced to a valid value. A value longer than four
+  bytes per character of the longest mask alternative now fits no mask and is refused.
+- The settings refuse a custom mask longer than 512 characters, every alternative counted.
 
 ### Fixed
 
+- **A value of only spaces no longer fails a unique field on MySQL or MariaDB.** It was checked
+  for uniqueness as typed, and their PAD SPACE collations compare it equal to every other empty
+  value; it is now validated as the empty value it is stored as.
+- **Values in the My courses custom field grouping are formatted in the field's configuration
+  context**, not in whatever context the page has.
 - **The mask now works in a modal form**, such as enrol_apply's application form. A dynamic form
   is defined first and rendered inside a fresh JavaScript requirements manager, so the mask
   module, required while the form was being defined, was lost and the field accepted any text.
