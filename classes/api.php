@@ -60,10 +60,11 @@ final class api {
      * The problems of a configuration, one message per setting
      *
      * Checks that the preset and the storage format are known, that a custom preset has a valid
-     * mask, that the regex is at most {@see pattern::REGEX_MAX_LENGTH} characters, compiles and
-     * survives a probe value ({@see pattern::regex_survives_probe()}, a smoke test for
-     * catastrophic backtracking, not a proof) and, when `maxlength` is given, that it can hold the
-     * longest value the mask stores. Whether `maxlength` itself is in range is the caller's rule.
+     * mask of at most {@see pattern::MASK_MAX_LENGTH} characters, that the regex is at most
+     * {@see pattern::REGEX_MAX_LENGTH} characters, compiles and survives a probe value
+     * ({@see pattern::regex_survives_probe()}, a smoke test for catastrophic backtracking, not a
+     * proof) and, when `maxlength` is given, that it can hold the longest value the mask stores.
+     * Whether `maxlength` itself is in range is the caller's rule.
      *
      * @param array $config the configuration (see the class description)
      * @return array setting name ('preset', 'mask', 'regex', 'storeformat' or 'maxlength') =>
@@ -81,6 +82,8 @@ final class api {
             $custom = trim(self::setting($config, 'mask'));
             if ($custom === '') {
                 $errors['mask'] = get_string('errorconfigmaskrequired', 'customfield_pattern');
+            } else if (\core_text::strlen($custom) > pattern::MASK_MAX_LENGTH) {
+                $errors['mask'] = get_string('errorconfigmasklength', 'customfield_pattern', pattern::MASK_MAX_LENGTH);
             } else if (!mask::is_valid($custom)) {
                 $errors['mask'] = get_string('errorconfigmask', 'customfield_pattern');
             }

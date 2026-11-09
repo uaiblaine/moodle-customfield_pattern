@@ -37,6 +37,13 @@ final class mask {
     public const ALTERNATIVE_SEPARATOR = '|';
 
     /**
+     * @var int Bytes of typed input {@see self::apply()} reads per character of the longest
+     *          alternative: room for a space or a multi-byte blank between every character, and
+     *          a bound on the per-character array a value is split into.
+     */
+    public const INPUT_BYTES_PER_MASK_CHARACTER = 4;
+
+    /**
      * Split a mask setting into its alternatives
      *
      * Leading and trailing whitespace of each alternative is dropped: a space typed around `|`
@@ -157,12 +164,21 @@ final class mask {
      * consumed only where the mask has it. Every other character must fill a token of the
      * right class, all tokens must be filled and nothing may be left over.
      *
+     * A value longer, in bytes, than {@see self::INPUT_BYTES_PER_MASK_CHARACTER} times the
+     * longest alternative fits nothing, before it is split: whitespace and literals are dropped
+     * in any number, so without this bound a request of megabytes would be split into one string
+     * per character only to be reduced to a few.
+     *
      * @param string $value the typed value
      * @param array $alternatives list of alternative masks
      * @return array|null null when no alternative fits, else ['masked' => the value with the
      *      literals, 'raw' => the token characters only]
      */
     public static function apply(string $value, array $alternatives): ?array {
+        if (strlen($value) > self::INPUT_BYTES_PER_MASK_CHARACTER * self::max_length($alternatives)) {
+            return null;
+        }
+
         $droppable = [];
         foreach ($alternatives as $alternative) {
             foreach (self::chars($alternative) as $char) {

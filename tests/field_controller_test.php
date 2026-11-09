@@ -334,4 +334,41 @@ final class field_controller_test extends \advanced_testcase {
     public function test_parse_value(): void {
         $this->assertSame('30130-100', $this->make_field(['preset' => 'cep'])->parse_value('30130100'));
     }
+
+    /**
+     * Grouping values are formatted in the configuration context, whatever the page's context is
+     *
+     * The multilang filter is on for the site and off in the course the page is set to, so only
+     * the configuration (system) context filters the value.
+     *
+     * @return void
+     */
+    public function test_course_grouping_format_values_use_the_configuration_context(): void {
+        global $CFG, $PAGE;
+        require_once($CFG->dirroot . '/blocks/myoverview/lib.php');
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course();
+        $coursecontext = \context_course::instance($course->id);
+        set_config('filterall', 1);
+        filter_set_global_state('multilang', TEXTFILTER_ON);
+        filter_set_applies_to_strings('multilang', true);
+        filter_set_local_state('multilang', $coursecontext->id, TEXTFILTER_OFF);
+        \filter_manager::reset_caches();
+        $PAGE->set_context($coursecontext);
+
+        $category = $this->get_generator()->create_category();
+        $field = $this->get_generator()->create_field([
+            'categoryid' => $category->get('id'),
+            'shortname' => 'grouping',
+            'type' => 'pattern',
+            'configdata' => ['maxlength' => 100, 'displaysize' => 30],
+        ]);
+        $value = '<span lang="en" class="multilang">yes</span><span lang="de" class="multilang">ja</span>';
+
+        $formatted = $field->course_grouping_format_values([$value]);
+        $this->assertSame('yes', $formatted[$value]);
+        $this->assertArrayHasKey(BLOCK_MYOVERVIEW_CUSTOMFIELD_EMPTY, $formatted);
+        // Control: the page's own context does not filter the value.
+        $this->assertSame('yesja', format_string($value));
+    }
 }

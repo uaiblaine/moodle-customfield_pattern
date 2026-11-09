@@ -28,6 +28,7 @@ $string['displaysize'] = 'Form input size';
 $string['errorcnpj'] = 'This is not a valid CNPJ.';
 $string['errorconfigdisplaysize'] = 'The form input size must be between 1 and 200 characters.';
 $string['errorconfigmask'] = 'Every alternative of the mask, separated by |, must contain at least one of the tokens 9, A or *.';
+$string['errorconfigmasklength'] = 'The mask may have at most {$a} characters.';
 $string['errorconfigmaskrequired'] = 'A custom mask is required when the format is Custom mask.';
 $string['errorconfigmaxlen'] = 'The maximum number of characters allowed must be between 1 and 1333.';
 $string['errorconfigmaxlenmask'] = 'The maximum number of characters must be at least {$a}, the length of the longest value the mask stores.';

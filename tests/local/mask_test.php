@@ -130,4 +130,29 @@ final class mask_test extends \basic_testcase {
         $this->assertFalse(mask::is_numeric(['**']));
         $this->assertFalse(mask::is_numeric([]));
     }
+
+    /**
+     * A value longer than four bytes per character of the longest alternative fits nothing
+     *
+     * Whitespace and literals are dropped in any number, so only this bound refuses a padded
+     * value; it is applied before the value is split, which the memory a megabyte costs shows.
+     *
+     * @return void
+     */
+    public function test_apply_bounds_the_input(): void {
+        $cpf = ['999.999.999-99'];
+        $fitted = ['masked' => '529.982.247-25', 'raw' => '52998224725'];
+
+        $this->assertSame($fitted, mask::apply('529.982.247-25' . str_repeat(' ', 42), $cpf));
+        $this->assertNull(mask::apply('529.982.247-25' . str_repeat(' ', 43), $cpf));
+        // Bytes, not characters: 21 no-break spaces are 42 bytes, 22 are 44.
+        $this->assertSame($fitted, mask::apply('529.982.247-25' . str_repeat("\u{a0}", 21), $cpf));
+        $this->assertNull(mask::apply('529.982.247-25' . str_repeat("\u{a0}", 22), $cpf));
+
+        $megabyte = '529' . str_repeat('.', 1024 * 1024) . '98224725';
+        memory_reset_peak_usage();
+        $before = memory_get_usage();
+        $this->assertNull(mask::apply($megabyte, $cpf));
+        $this->assertLessThan(1024 * 1024, memory_get_peak_usage() - $before, 'The value is not split');
+    }
 }
