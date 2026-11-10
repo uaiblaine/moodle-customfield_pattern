@@ -15,13 +15,8 @@ is stored. It owns no tables: values live in core's `customfield_data`.
 Requirements
 ------------
 
-| Moodle | Supported |
-|---|---|
-| 5.1 | yes |
-| 5.2 | yes |
-| 5.3 | yes |
-
-`$plugin->requires` is Moodle 5.1 (2025100600).
+- Moodle 5.3 (branch `MOODLE_503_STABLE`, which `main` follows; releases `v5.3-rN`). Other Moodle versions have
+  their own branches: `MOODLE_501_STABLE` (5.1), `MOODLE_502_STABLE` (5.2) and `MOODLE_503_STABLE` (5.3).
 
 
 Installation
