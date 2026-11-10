@@ -14,12 +14,16 @@ field with an input mask and validation (CPF, CNPJ numeric and alphanumeric, CEP
 phone, custom masks, an optional anchored regex), shaped like core's `customfield_text`. It owns
 no tables: values live in core's `customfield_data.charvalue`. Consumers: course custom fields,
 enrol_apply's application questions (the field controller's value API, without a data row) and
-profilefield_repeatable's pattern columns (`\customfield_pattern\api`). Supports Moodle **5.1 through 5.3**
-(`$plugin->requires = 2025100600`, `$plugin->supported = [501, 503]`).
+profilefield_repeatable's pattern columns (`\customfield_pattern\api`). **One branch per Moodle
+version**: `MOODLE_501_STABLE`, `MOODLE_502_STABLE` and `MOODLE_503_STABLE` (`main` =
+`MOODLE_503_STABLE`), each with `$plugin->supported = [N, N]`. Every consumer installs the branch of
+its own Moodle version: profilefield_pattern requires it in `version.php`, and the CI of
+profilefield_pattern and of the three `*_repeatable` plugins names it in `plugin-dependencies`.
 CI is the moodle-an-hochschulen reusable workflow, one job per supported
 branch in `.github/workflows/ci.yml` — **update those jobs when `supported`
-changes**. Development happens on the m502 stack; this repo is mounted into the 5.1, 5.2 and
-5.3 stacks at `customfield/field/pattern` (see `~/dev/moodle-dev/plugins.conf`).
+changes**. Development happens on `main` and the m503 stack. Checkouts, mounted at
+`customfield/field/pattern` by explicit `~/dev/moodle-dev/plugins.conf` lines:
+`moodle-customfield_pattern` (`main`, m503 and m503b), `-502` (m502 and m502b), `-501` (m501).
 
 ## Agent orchestration budget (fleet rule, repeated here on purpose)
 
@@ -52,9 +56,9 @@ definition, and none runs on the session model.
 
 ```sh
 mdl ci moodle-customfield_pattern --matrix     # every CI leg locally before any push
-mdl phpunit m502 customfield_pattern           # targeted tests
-mdl grunt m502 customfield/field/pattern       # rebuild amd/build (commit with src)
-mdl purge m502                                 # after PHP changes that affect output
+mdl phpunit m503 customfield_pattern           # targeted tests
+mdl grunt m503 customfield/field/pattern       # rebuild amd/build (commit with src)
+mdl purge m503                                 # after PHP changes that affect output
 # Mutation sweep: absolute spec path, and both database families.
 mdl mutate moodle-customfield_pattern /Users/uaiblaine/dev/moodle-customfield_pattern/mutations/gates.conf --fast --db pgsql
 ```
@@ -83,13 +87,14 @@ amd/src/mask.js                lenient typing aid, document-level input listener
 
 ## Versions
 
-`$plugin->version` is a date-based number (`YYYYMMDDXX`) while the plugin ships one branch for
-every Moodle version it supports. When it splits into one branch per Moodle version, each branch
-numbers itself in the namespace of its Moodle version (`20241007XX` for 4.5, `20251006XX` for 5.1,
-`20260420XX` for 5.2), starting at its `$plugin->requires` value and counting up on that branch
-alone, because moodle.org needs a different number for each Moodle-specific release. The rule and
-its consequences for upgrade steps and cherry-picks are in the fleet file (`~/dev/CLAUDE.md`,
-"Versioning / upgrade discipline").
+Each branch numbers itself in the namespace of its Moodle version (`20251006XX` for 5.1,
+`20260420XX` for 5.2, `20261005XX` for 5.3), starting at its `$plugin->requires` value and counting
+up on that branch alone, because moodle.org needs a different number for each Moodle-specific
+release; releases are tagged `v<major>.<minor>-r<N>`. A fix lands on `main` first and is
+cherry-picked; each branch keeps its own `version.php`, `ci.yml` and README requirements line, then
+bumps its own counter. A consumer that requires this plugin names the number of the same branch.
+The rule and its consequences for upgrade steps are in the fleet file (`~/dev/CLAUDE.md`, "XMLDB,
+upgrades, privacy, versioning").
 
 ## Architecture gotchas
 
