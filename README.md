@@ -1,7 +1,7 @@
 moodle-customfield_pattern
 ==========================
 
-[![Moodle Plugin CI](https://github.com/uaiblaine/moodle-customfield_pattern/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/uaiblaine/moodle-customfield_pattern/actions/workflows/ci.yml?query=branch%3Amain)
+[![Moodle Plugin CI](https://github.com/uaiblaine/moodle-customfield_pattern/actions/workflows/ci.yml/badge.svg?branch=MOODLE_502_STABLE)](https://github.com/uaiblaine/moodle-customfield_pattern/actions/workflows/ci.yml?query=branch%3AMOODLE_502_STABLE)
 
 A single-line custom field with an input mask and validation: CPF, CNPJ, CEP, Brazilian phone
 numbers, or a mask and regular expression of your own.
@@ -15,13 +15,8 @@ is stored. It owns no tables: values live in core's `customfield_data`.
 Requirements
 ------------
 
-| Moodle | Supported |
-|---|---|
-| 5.1 | yes |
-| 5.2 | yes |
-| 5.3 | yes |
-
-`$plugin->requires` is Moodle 5.1 (2025100600).
+- Moodle 5.2 (branch `MOODLE_502_STABLE`; releases `v5.2-rN`). Other Moodle versions have
+  their own branches: `MOODLE_501_STABLE` (5.1), `MOODLE_502_STABLE` (5.2) and `MOODLE_503_STABLE` (5.3).
 
 
 Installation
