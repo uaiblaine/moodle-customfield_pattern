@@ -44,6 +44,10 @@ final class data_controller_test extends \advanced_testcase {
         parent::setUp();
         $this->resetAfterTest();
 
+        // The handler validates and saves every course field of the site, and a plugin (a theme among
+        // them) may install its own on the test site: those fields would see the tests' partial form data.
+        \core_course\customfield\course_handler::create()->delete_all();
+
         $generator = $this->get_generator();
         $this->category = $generator->create_category();
         $configs = [
